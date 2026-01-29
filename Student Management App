@@ -1,0 +1,172 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const StudentApp());
+}
+
+class StudentApp extends StatelessWidget {
+  const StudentApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Colors.indigo,
+      ),
+      home: const StudentHomePage(),
+    );
+  }
+}
+
+class StudentHomePage extends StatefulWidget {
+  const StudentHomePage({super.key});
+
+  @override
+  State<StudentHomePage> createState() => _StudentHomePageState();
+}
+
+class _StudentHomePageState extends State<StudentHomePage> {
+  final List<Map<String, String>> students = [];
+  final _formKey = GlobalKey<FormState>();
+
+  final nameController = TextEditingController();
+  final rollController = TextEditingController();
+  final courseController = TextEditingController();
+
+  int? editIndex;
+
+  void openStudentForm({int? index}) {
+    if (index != null) {
+      nameController.text = students[index]['name']!;
+      rollController.text = students[index]['roll']!;
+      courseController.text = students[index]['course']!;
+      editIndex = index;
+    } else {
+      nameController.clear();
+      rollController.clear();
+      courseController.clear();
+      editIndex = null;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(editIndex == null ? "Add Student" : "Edit Student"),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: "Name"),
+                validator: (value) =>
+                    value!.isEmpty ? "Enter name" : null,
+              ),
+              TextFormField(
+                controller: rollController,
+                decoration: const InputDecoration(labelText: "Roll No"),
+                validator: (value) =>
+                    value!.isEmpty ? "Enter roll number" : null,
+              ),
+              TextFormField(
+                controller: courseController,
+                decoration: const InputDecoration(labelText: "Course"),
+                validator: (value) =>
+                    value!.isEmpty ? "Enter course" : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: saveStudent,
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void saveStudent() {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        if (editIndex == null) {
+          students.add({
+            'name': nameController.text,
+            'roll': rollController.text,
+            'course': courseController.text,
+          });
+        } else {
+          students[editIndex!] = {
+            'name': nameController.text,
+            'roll': rollController.text,
+            'course': courseController.text,
+          };
+        }
+      });
+      Navigator.pop(context);
+    }
+  }
+
+  void deleteStudent(int index) {
+    setState(() {
+      students.removeAt(index);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Student Management"),
+      ),
+      body: students.isEmpty
+          ? const Center(child: Text("No students added"))
+          : ListView.builder(
+              itemCount: students.length,
+              itemBuilder: (context, index) => Card(
+                margin: const EdgeInsets.all(8),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.indigo,
+                    child: Text(
+                      students[index]['name']![0].toUpperCase(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  title: Text(students[index]['name']!),
+                  subtitle: Text(
+                    "Roll: ${students[index]['roll']}\nCourse: ${students[index]['course']}",
+                  ),
+                  isThreeLine: true,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () => openStudentForm(index: index),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => deleteStudent(index),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => openStudentForm(),
+        icon: const Icon(Icons.add),
+        label: const Text("Add Student"),
+      ),
+    );
+  }
+}
